@@ -29,6 +29,7 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
   Future<List<ui.Image>>? _futureImages;
   List<Color>? _currentColorsArray;
   List<dynamic>? _pickerPositions;
+  List<String>? _labelsArray;
   int? _selectedIndex;
 
   @override
@@ -43,7 +44,7 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
     final bytes = await imageFile.readAsBytes();
     var response = await http.post(
       Uri.parse(
-          "https://af99-2806-2f0-91a0-68bf-6cfd-2617-aca8-f77e.ngrok-free.app/segment"),
+          "https://1181-2806-2f0-91a0-68bf-2907-8902-c70-e5d0.ngrok-free.app/segment"),
       body: bytes,
     );
 
@@ -55,6 +56,7 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
       List<img.Image> imagesArray = [];
       List<Color> currentColorsArray = [];
       List<dynamic> pickerPositions = [];
+      List<String> labelsArray = [];
 
       print('Num of masks $numOfMasks');
       for (int i = 0; i < numOfMasks; i++) {
@@ -68,6 +70,7 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
         imagesArray.add(image);
         whitePixelsArray.add(whitePixels);
         pickerPositions.add(json.decode(response.body)['boxes'][i]);
+        labelsArray.add(json.decode(response.body)['labels'][i]);
         currentColorsArray.add(Colors.transparent);
       }
 
@@ -80,6 +83,7 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
         _futureImages = futureImages;
         _currentColorsArray = currentColorsArray;
         _pickerPositions = pickerPositions;
+        _labelsArray = labelsArray;
       });
 
       print('Testinggg colors..... ${_currentColorsArray?.length}');
@@ -248,28 +252,35 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
                               _whitePixelsArray![i], _currentColorsArray![i]),
                         ),
                       for (var i = 0; i < snapshot.data!.length; i++)
-                        Positioned(
-                          left: _pickerPositions![i][0] * constraints.maxWidth,
-                          top: _pickerPositions![i][1] *
-                              (constraints.maxWidth * _aspectRatio),
-                          child: FractionalTranslation(
-                            translation: const Offset(-0.5, -0.5),
-                            child: IconButton(
-                              iconSize: 30,
-                              icon: Icon(Icons.color_lens,
-                                  color: _selectedIndex == null ||
-                                          _selectedIndex == i
-                                      ? Colors.amber
-                                      : Colors.transparent),
-                              onPressed: () {
-                                setState(() {
-                                  _selectedIndex = i;
-                                });
-                                // _openColorPicker(i);
-                              },
-                            ),
-                          ),
-                        ),
+                        _selectedIndex == null || _selectedIndex == i
+                            ? Positioned(
+                                left: _pickerPositions![i][0] *
+                                    constraints.maxWidth,
+                                top: _pickerPositions![i][1] *
+                                    (constraints.maxWidth * _aspectRatio),
+                                child: FractionalTranslation(
+                                  translation: const Offset(-0.5, -0.5),
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      minimumSize: const Size(50, 25),
+                                      padding: EdgeInsets.zero,
+                                      textStyle: const TextStyle(fontSize: 11),
+                                      backgroundColor:
+                                          _labelsArray![i] == 'pared'
+                                              ? Colors.purple.shade900
+                                              : Colors.cyan.shade700,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedIndex = i;
+                                      });
+                                      // _openColorPicker(i);
+                                    },
+                                    child: Text(_labelsArray![i]),
+                                  ),
+                                ),
+                              )
+                            : Container(),
                     ],
                   ),
                   const SizedBox(height: 10),
