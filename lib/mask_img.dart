@@ -31,15 +31,35 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
   List<dynamic>? _pickerPositions;
   List<String>? _labelsArray;
   int? _selectedIndex;
+  ui.Image? _texture;
+  List<Color>? _colorOptionButtons;
 
   @override
   void initState() {
     super.initState();
     _image = widget.initialImage;
     _loadImageDB(_image!);
+    _colorOptionButtons = [
+      Colors.deepPurple.shade900,
+      Colors.teal.shade900,
+      Colors.deepOrange.shade900,
+      Colors.pink,
+      Colors.transparent
+    ];
+  }
+
+  Future<ui.Image> loadUiImage(String assetPath) async {
+    final Completer<ui.Image> completer = Completer();
+    final ByteData data = await rootBundle.load(assetPath);
+    final Uint8List bytes = data.buffer.asUint8List();
+    ui.decodeImageFromList(bytes, (ui.Image img) {
+      completer.complete(img);
+    });
+    return completer.future;
   }
 
   Future<void> _loadImageDB(File imageFile) async {
+    _texture = await loadUiImage('assets/brick.jpg');
     print('Testinggg..... $_image');
     final bytes = await imageFile.readAsBytes();
     var response = await http.post(
@@ -131,48 +151,6 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
     return Future.wait(futures);
   }
 
-  void _changeColor(int index, Color color) {
-    setState(() {
-      _currentColorsArray![index] = color;
-    });
-  }
-
-  // void _openColorPicker(int index) {
-  //   // showDialog(
-  //   //   context: context,
-  //   //   builder: (context) {
-  //   //     // Color selectedColor = _currentColors[index];
-  //   //     Color selectedColor = _currentColorsArray![index];
-  //   //     print('Color setting $selectedColor');
-  //   //     return AlertDialog(
-  //   //       title: const Text('Pick a color'),
-  //   //       content: SingleChildScrollView(
-  //   //         child: ColorPicker(
-  //   //           pickerColor: selectedColor,
-  //   //           onColorChanged: (color) {
-  //   //             setState(() {
-  //   //               selectedColor = color;
-  //   //             });
-  //   //             print('set $index $color ${_currentColorsArray![index]}');
-  //   //           },
-  //   //         ),
-  //   //       ),
-  //   //       actions: <Widget>[
-  //   //         ElevatedButton(
-  //   //           child: const Text('Got it'),
-  //   //           onPressed: () {
-  //   //             setState(() {
-  //   //               _currentColorsArray![index] = selectedColor;
-  //   //             });
-  //   //             Navigator.of(context).pop();
-  //   //           },
-  //   //         ),
-  //   //       ],
-  //   //     );
-  //   //   },
-  //   // );
-  // }
-
   Future getImageFromGallery() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     setState(() {
@@ -217,6 +195,72 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
     );
   }
 
+  ElevatedButton getColorOptionButton(Color color) {
+    if (color == Colors.pink) {
+      return ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _currentColorsArray![_selectedIndex!] = color;
+            _selectedIndex = null;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          fixedSize: const Size(60, 60),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            image: const DecorationImage(
+              image: AssetImage('assets/brick.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      );
+    } else if (color == Colors.transparent) {
+      return ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _currentColorsArray![_selectedIndex!] = color;
+            _selectedIndex = null;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+            fixedSize: const Size(60, 60),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: EdgeInsets.zero),
+        child: const Icon(
+          Icons.remove_circle_outline,
+          color: Colors.white,
+        ),
+      );
+    } else {
+      return ElevatedButton(
+          onPressed: () {
+            setState(() {
+              _currentColorsArray![_selectedIndex!] = color;
+              _selectedIndex = null;
+            });
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color, // Background color
+            fixedSize: const Size(60, 60),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<ui.Image>>(
@@ -230,163 +274,85 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
           return LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               if (snapshot.data != null) {
-                return Column(children: [
-                  Stack(
-                    alignment: Alignment.center,
+                return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _image == null
-                          ? const Text('No Image selected')
-                          : Image.file(
+                      // const SizedBox(height: 180),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Visibility(
+                            visible: _image != null,
+                            child: Image.file(
                               _image!,
                               width: constraints
                                   .maxWidth, // Escalar imagen de fondo (Ancho del celular)
                               height: constraints.maxWidth * _aspectRatio,
                             ),
-                      for (var i = 0; i < snapshot.data!.length; i++)
-                        CustomPaint(
-                          size: Size(
-                              constraints.maxWidth,
-                              constraints.maxWidth *
-                                  _aspectRatio), // Escalar mascara (misma dimension que la imagen de fondo)
-                          painter: ImageMaskPainter(snapshot.data![i],
-                              _whitePixelsArray![i], _currentColorsArray![i]),
-                        ),
-                      for (var i = 0; i < snapshot.data!.length; i++)
-                        _selectedIndex == null || _selectedIndex == i
-                            ? Positioned(
-                                left: _pickerPositions![i][0] *
-                                    constraints.maxWidth,
-                                top: _pickerPositions![i][1] *
-                                    (constraints.maxWidth * _aspectRatio),
-                                child: FractionalTranslation(
-                                  translation: const Offset(-0.5, -0.5),
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      minimumSize: const Size(50, 25),
-                                      padding: EdgeInsets.zero,
-                                      textStyle: const TextStyle(fontSize: 11),
-                                      backgroundColor:
-                                          _labelsArray![i] == 'pared'
-                                              ? Colors.purple.shade900
-                                              : Colors.cyan.shade700,
+                          ),
+                          for (var i = 0; i < snapshot.data!.length; i++)
+                            CustomPaint(
+                              size: Size(
+                                  constraints.maxWidth,
+                                  constraints.maxWidth *
+                                      _aspectRatio), // Escalar mascara (misma dimension que la imagen de fondo)
+                              painter: ImageMaskPainter(
+                                  snapshot.data![i],
+                                  _whitePixelsArray![i],
+                                  _currentColorsArray![i],
+                                  _texture!),
+                            ),
+                          for (var i = 0; i < snapshot.data!.length; i++)
+                            _selectedIndex == null || _selectedIndex == i
+                                ? Positioned(
+                                    left: _pickerPositions![i][0] *
+                                        constraints.maxWidth,
+                                    top: _pickerPositions![i][1] *
+                                        (constraints.maxWidth * _aspectRatio),
+                                    child: FractionalTranslation(
+                                      translation: const Offset(-0.5, -0.5),
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          minimumSize: const Size(50, 25),
+                                          padding: EdgeInsets.zero,
+                                          textStyle:
+                                              const TextStyle(fontSize: 11),
+                                          backgroundColor:
+                                              _labelsArray![i] == 'pared'
+                                                  ? Colors.purple.shade900
+                                                  : Colors.cyan.shade700,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _selectedIndex = i;
+                                          });
+                                          // _openColorPicker(i);
+                                        },
+                                        child: Text(_labelsArray![i]),
+                                      ),
                                     ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedIndex = i;
-                                      });
-                                      // _openColorPicker(i);
-                                    },
-                                    child: Text(_labelsArray![i]),
-                                  ),
-                                ),
-                              )
-                            : Container(),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _selectedIndex != null
-                      ? Row(
+                                  )
+                                : Container(),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Visibility(
+                        maintainSize: true,
+                        maintainAnimation: true,
+                        maintainState: true,
+                        visible: _selectedIndex != null,
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _currentColorsArray![_selectedIndex!] =
-                                        Colors.green;
-                                    _selectedIndex = null;
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.green, // Background color
-                                  fixedSize: const Size(60, 60),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10), // Rounded border
-                                  ),
-                                  // Width and height
-                                ),
-                                child: null),
-                            ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _currentColorsArray![_selectedIndex!] =
-                                        Colors.blue;
-                                    _selectedIndex = null;
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.blue, // Background color
-                                  fixedSize: const Size(60, 60),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10), // Rounded border
-                                  ),
-                                  // Width and height
-                                ),
-                                child: null),
-                            ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _currentColorsArray![_selectedIndex!] =
-                                        Colors.red;
-                                    _selectedIndex = null;
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.red, // Background color
-                                  fixedSize: const Size(60, 60),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10), // Rounded border
-                                  ),
-                                  // Width and height
-                                ),
-                                child: null),
-                            ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _currentColorsArray![_selectedIndex!] =
-                                        Colors.yellow;
-                                    _selectedIndex = null;
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.yellow, // Background color
-                                  fixedSize: const Size(60, 60),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10), // Rounded border
-                                  ),
-                                  // Width and height
-                                ),
-                                child: null),
-                            ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _currentColorsArray![_selectedIndex!] =
-                                        Colors.pink;
-                                    _selectedIndex = null;
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Colors.pink, // Background color
-                                  fixedSize: const Size(60, 60),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10), // Rounded border
-                                  ),
-                                  // Width and height
-                                ),
-                                child: null)
+                            for (var i = 0;
+                                i < _colorOptionButtons!.length;
+                                i++)
+                              getColorOptionButton(_colorOptionButtons![i])
                           ],
-                        )
-                      : Container(),
-                ]);
+                        ),
+                      ),
+                    ]);
               } else {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -400,29 +366,64 @@ class _MaskImageWidgetState extends State<MaskImageWidget> {
 
 class ImageMaskPainter extends CustomPainter {
   final ui.Image image;
+  final ui.Image texture;
   final List<Offset> whitePixels;
   final Color maskColor;
 
-  ImageMaskPainter(this.image, this.whitePixels, this.maskColor);
+  ImageMaskPainter(this.image, this.whitePixels, this.maskColor, this.texture);
 
   @override
   void paint(Canvas canvas, Size size) {
-    // print('HEREE ${whitePixels.length} $size');
-    final paint = Paint()
-      ..color = Colors.transparent
-      ..blendMode = BlendMode.srcOver;
-    canvas.drawImage(image, Offset.zero, paint);
+    if (maskColor == Colors.pink) {
+      var rect = Rect.fromLTRB(0, 0, size.width, size.height);
+      // Create the mask paint
+      final maskPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+      canvas.saveLayer(rect, maskPaint);
 
-    final maskPaint = Paint()
-      ..color = maskColor
-      ..style = PaintingStyle.fill;
+      // Draw white pixels on the mask
+      for (final offset in whitePixels) {
+        Offset scaledOffset = Offset(
+          (offset.dx / image.width) * size.width,
+          (offset.dy / image.height) * size.height,
+        );
+        canvas.drawCircle(
+            scaledOffset, 1, maskPaint); // Adjust the radius as needed
+      }
+      // Draw the texture only on the white mask areas
+      Size inputSize =
+          Size(texture.width.toDouble(), texture.height.toDouble());
+      final FittedSizes fittedSizes =
+          applyBoxFit(BoxFit.cover, inputSize, rect.size);
+      final Size sourceSize = fittedSizes.source;
+      final Rect sourceRect =
+          Alignment.center.inscribe(sourceSize, Offset.zero & inputSize);
+      canvas.drawImageRect(
+        texture,
+        sourceRect,
+        rect,
+        maskPaint..blendMode = BlendMode.srcIn,
+      );
 
-    for (final offset in whitePixels) {
-      Offset scaledOffset = Offset((offset.dx / image.width) * size.width,
-          (offset.dy / image.height) * size.height);
+      canvas.restore();
+    } else {
+      final paint = Paint()
+        ..color = Colors.transparent
+        ..blendMode = BlendMode.srcOver;
+      canvas.drawImage(image, Offset.zero, paint);
 
-      canvas.drawCircle(
-          scaledOffset, 1, maskPaint); // Adjust the radius as needed
+      final maskPaint = Paint()
+        ..color = maskColor
+        ..style = PaintingStyle.fill;
+
+      for (final offset in whitePixels) {
+        Offset scaledOffset = Offset((offset.dx / image.width) * size.width,
+            (offset.dy / image.height) * size.height);
+
+        canvas.drawCircle(
+            scaledOffset, 1, maskPaint); // Adjust the radius as needed
+      }
     }
   }
 

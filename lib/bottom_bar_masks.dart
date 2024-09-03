@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:color_picker/demo_view.dart';
-import 'package:color_picker/mask_img.dart';
+// import 'package:color_picker/mask_img.dart';
+import 'package:color_picker/test_img.dart';
 import 'package:flutter/material.dart';
 
 class BottomNavigationBarMasksWidget extends StatefulWidget {
@@ -32,7 +33,10 @@ class _BottomNavigationBarMasksState
           style: optionStyle,
         ),
         _image != null
-            ? MaskImageWidget(
+            // ? MaskImageWidget(
+            //     initialImage: _image,
+            //   )
+            ? TestImageWidget(
                 initialImage: _image,
               )
             : const Center(child: CircularProgressIndicator()),
@@ -50,6 +54,7 @@ class _BottomNavigationBarMasksState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Selecciona una superficie')),
       body: Center(
         child: _widgetOptions.isNotEmpty
             ? _widgetOptions.elementAt(_selectedIndex)

@@ -120,31 +120,55 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                 Positioned.fill(
                     child: Align(
                   alignment: Alignment.bottomLeft,
-                  child: ElevatedButton(
-                    child: const Icon(Icons.insert_photo_outlined),
-                    onPressed: () async {
-                      await getImageFromGallery(context);
-                    },
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 35),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          fixedSize: const Size(60, 60),
+                          shape: const CircleBorder(),
+                          padding: EdgeInsets.zero),
+                      child: const Icon(Icons.insert_photo_outlined),
+                      onPressed: () async {
+                        await getImageFromGallery(context);
+                      },
+                    ),
                   ),
                 )),
                 Positioned.fill(
                     child: Align(
                   alignment: Alignment.bottomCenter,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await takePicture(context);
-                    },
-                    child: const Icon(Icons.camera_alt),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          fixedSize: const Size(90, 90),
+                          shape: const CircleBorder(),
+                          padding: EdgeInsets.zero),
+                      onPressed: () async {
+                        await takePicture(context);
+                      },
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 35,
+                      ),
+                    ),
                   ),
                 )),
                 Positioned.fill(
                     child: Align(
                   alignment: Alignment.bottomRight,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      toggleCameraLens();
-                    },
-                    child: const Icon(Icons.switch_camera_outlined),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 35),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          fixedSize: const Size(60, 60),
+                          shape: const CircleBorder(),
+                          padding: EdgeInsets.zero),
+                      onPressed: () async {
+                        toggleCameraLens();
+                      },
+                      child: const Icon(Icons.switch_camera_outlined),
+                    ),
                   ),
                 ))
               ],
